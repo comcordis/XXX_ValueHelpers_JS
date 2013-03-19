@@ -20,6 +20,11 @@ var XXX_Type =
 		return value === false;
 	},
 	
+	makeBoolean: function (value)
+	{
+		return value ? true : false;
+	},
+	
 	////////////////////
 	// Integer
 	////////////////////

@@ -20,7 +20,7 @@ var XXX_Timestamp = function (tempParameter)
 // Seconds
 XXX_Timestamp.prototype.set = function (timestamp)
 {
-	if (XXX_Type.isInteger(timestamp))
+	if (XXX_Type.isNumber(timestamp))
 	{
 		this.timestamp = timestamp;
 	}
@@ -169,27 +169,3 @@ XXX_Timestamp.prototype.compose = function (parts)
 		
 	this.timestamp = (Date.UTC(parts.year, parts.month - 1, parts.date, parts.hour, parts.minute, parts.second, 0) / 1000);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

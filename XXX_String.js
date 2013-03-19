@@ -862,5 +862,14 @@ var XXX_String =
 		var parts = XXX_String.splitToArray(value, separator);
 		
 		return parts[index];
+	},
+	
+	
+	filterSuggestion: function (suggestion)
+	{
+		suggestion = XXX_String_Pattern.replace(suggestion, '\\s{2,}', '', ' ');
+		suggestion = XXX_String.trimLeft(suggestion);
+		
+		return suggestion;
 	}
 };

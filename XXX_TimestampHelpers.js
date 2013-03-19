@@ -28,7 +28,7 @@ var XXX_TimestampHelpers =
 		
 		getCurrentYear: function ()
 		{
-			return XXX_Type.makeInteger((new Date()).getUTCYear());
+			return XXX_Type.makeInteger((new Date()).getUTCFullYear());
 		},
 		
 		getCurrentMonth: function ()
@@ -468,15 +468,15 @@ var XXX_TimestampHelpers =
 	// TimeZone & DST
 	////////////////////
 	
-		getLocalSecondOffset: function ()
+		getLocalSecondOffset: function (timeZoneSecondOffset, daylightSavingTime)
 		{
 			var localSecondOffset = 0;
 			
-			if (XXX_Type.isInteger(XXX_I18n_Localization.get('dateTime', 'timeZoneSecondOffset')))
+			if (XXX_Type.isInteger(timeZoneSecondOffset))
 			{
-				localSecondOffset += XXX_I18n_Localization.get('dateTime', 'timeZoneSecondOffset');
+				localSecondOffset += timeZoneSecondOffset;
 				
-				if (XXX_I18n_Localization.get('dateTime', 'daylightSavingTime'))
+				if (daylightSavingTime)
 				{
 					localSecondOffset += 3600;
 				}
@@ -575,8 +575,13 @@ var XXX_TimestampHelpers =
 	// Month array
 	////////////////////
 	
-	getMonthArray: function (year, month)
+	getMonthArray: function (year, month, weekStart)
 	{
+		if (!(weekStart == 'monday' || weekStart == 'sunday'))
+		{
+			weekStart = 'monday';
+		}
+		
 		var currentMonth =
 		{
 			year: year,
@@ -597,7 +602,7 @@ var XXX_TimestampHelpers =
 		var paddingDaysInPreviousMonth = 0;
 		var paddingDaysInNextMonth = 0;
 		
-		if (XXX_I18n_Localization.get('dateTime', 'weekStart') == 'monday')
+		if (weekStart == 'monday')
 		{
 			paddingDaysInPreviousMonth = firstDayOfTheMonthDateParts.dayOfTheWeek - 1;
 			paddingDaysInNextMonth = 7 - lastDayOfTheMonthDateParts.dayOfTheWeek;
@@ -666,7 +671,7 @@ var XXX_TimestampHelpers =
 					break;
 			}
 		}
-		else if (XXX_I18n_Localization.get('dateTime', 'weekStart') == 'sunday')
+		else if (weekStart == 'sunday')
 		{
 			switch (firstDayOfTheMonthDateParts.dayOfTheWeek)
 			{
@@ -758,7 +763,7 @@ var XXX_TimestampHelpers =
 		
 			newResult.push('w');
 			
-			if (XXX_I18n_Localization.get('dateTime', 'weekStart') == 'monday')
+			if (weekStart == 'monday')
 			{
 				newResult.push(1);
 				newResult.push(2);
@@ -768,7 +773,7 @@ var XXX_TimestampHelpers =
 				newResult.push(6);
 				newResult.push(7);
 			}
-			else if (XXX_I18n_Localization.get('dateTime', 'weekStart') == 'sunday')
+			else if (weekStart == 'sunday')
 			{
 				newResult.push(7);
 				newResult.push(1);
@@ -1067,7 +1072,7 @@ var XXX_TimestampHelpers =
 	dateOneDayLater: function (date)
 	{
 		var newYear = date.year;
-		var newMonth = date.month;		
+		var newMonth = date.month;
 		var newDate = date.date;
 		
 		var dayTotalInMonth = this.getDayTotalInMonth(newYear, newMonth);
@@ -1096,6 +1101,454 @@ var XXX_TimestampHelpers =
 			year: newYear,
 			month: newMonth,
 			date: newDate
+		};
+		
+		return result;
+	},
+	
+	composeTimeValue: function (timestamp, clockType)
+	{
+		clockType = XXX_Default.toOption(clockType, ['12', '24'], '24');
+		
+		var timeValue = '';
+		
+		var timestampParts = timestamp.parse();
+		
+		var hour = timestampParts.hour;
+		var minute = timestampParts.minute;
+		var meridiem = '';
+		
+		if (clockType == '12')
+		{
+			if (hour < 12)
+			{
+				meridiem = 'am';
+				
+				if (hour == 0)
+				{
+					hour = 12;
+				}
+			}
+			else
+			{				
+				meridiem = 'pm';
+				
+				hour -= 12;
+				
+				if (hour == 0)
+				{
+					hour = 12;
+				}
+			}
+		}
+				
+		var composedHour = XXX_String.padLeft(hour, '0', 2);
+		
+		var composedMinute = XXX_String.padLeft(minute, '0', 2);
+				
+		var composedMeridiem = '';
+		
+		var meridiemNames = XXX_I18n_Translation.get('dateTime', 'meridiems', 'abbreviations');
+		
+		if (meridiem == 'am')
+		{
+			composedMeridiem = meridiemNames[0];
+		}
+		else
+		{
+			composedMeridiem = meridiemNames[1];
+		}
+		
+		switch (clockType)
+		{
+			case '12':
+				timeValue = composedHour + ':' + composedMinute + ' ' + composedMeridiem;
+				break;
+			case '24':
+				timeValue = composedHour + ':' + composedMinute;
+				break;
+		}
+		
+		return timeValue;
+	},
+	
+	composeDateValue: function (timestamp, dateFormat)
+	{
+		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'dateMonthYear');
+		
+		var dateValue = '';
+		
+		var timestampParts = timestamp.parse();
+		
+		var composedYear = XXX_String.padLeft(timestampParts.year, '0', 4);
+		var composedMonth = XXX_String.padLeft(timestampParts.month, '0', 2);
+		var composedDate = XXX_String.padLeft(timestampParts.date, '0', 2);
+		
+		var composedMonthName = '';
+		
+		var monthNames = XXX_I18n_Translation.get('dateTime', 'months', 'abbreviations');
+		composedMonthName = monthNames[timestampParts.month - 1];
+		
+		var composedDayOfTheWeekName = '';
+		var dayOfTheWeekNames = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'abbreviations');
+		composedDayOfTheWeekName = dayOfTheWeekNames[timestampParts.dayOfTheWeek - 1];
+		
+		switch (dateFormat)
+		{
+			case 'dateMonthYear':
+				dateValue = composedDayOfTheWeekName + ' ' + composedDate + ' / ' + composedMonthName + ' / ' + composedYear;
+				break;
+			case 'monthDateYear':
+				dateValue = composedMonthName + ' / ' + composedDayOfTheWeekName + ' ' + composedDate + ' / ' + composedYear;
+				break;
+			case 'yearMonthDate':
+				dateValue = composedYear + ' / ' + composedMonthName + ' / ' + composedDayOfTheWeekName + ' ' + composedDate;
+				break;
+		}
+		
+		return dateValue;
+	},
+	
+	// TODO
+	parseTimeValue: function (timeValue, clockType)
+	{
+		clockType = XXX_Default.toOption(clockType, ['12', '24'], '24');
+		
+		var original = timeValue;
+		
+		//XXX_JS.errorNotification(1, 'Parsing time value ' + timeValue);
+		
+		clockType = XXX_Default.toOption(clockType, ['12', '24'], '24');
+		
+		var hour = 12;
+		var minute = 0;
+		var meridiem = 'pm';
+		
+		var newHour = hour;
+		var newMinute = minute;
+		var newMeridiem = false;
+		
+		if (timeValue != '')
+		{
+			timeValue = XXX_String.convertToLowerCase(timeValue);
+			
+			var matches = XXX_String_Pattern.getMatches(timeValue, '([0-9]{1,2})(?:[/\\-. :,\'"]*([0-9]{1,2}))?[/\\-. :,\'"]*([apm. ]{2,})?', 'i');
+			
+			if (XXX_Array.getFirstLevelItemTotal(matches) == 2)
+			{
+				XXX_JS.errorNotification(1, '1 part');
+				newHour = XXX_Type.makeInteger(matches[1][0]);
+			}
+			else if (XXX_Array.getFirstLevelItemTotal(matches) == 3)
+			{
+				XXX_JS.errorNotification(1, '2 parts');
+				newHour = XXX_Type.makeInteger(matches[1][0]);
+				newMinute = XXX_Type.makeInteger(matches[2][0]);
+			}
+			else if (XXX_Array.getFirstLevelItemTotal(matches) == 4)
+			{
+				newHour = XXX_Type.makeInteger(matches[1][0]);
+				newMinute = XXX_Type.makeInteger(matches[2][0]);
+				
+				var temp = XXX_String.trim(matches[3][0]);
+				
+				if (XXX_String.findFirstPosition(temp, 'a') > -1)
+				{
+					newMeridiem = 'am';
+				}
+				else if (XXX_String.findFirstPosition(temp, 'p') > -1)
+				{
+					newMeridiem = 'pm';
+				}
+			}
+			
+			newHour = XXX_Number.absolute(newHour);
+			newMinute = XXX_Number.absolute(newMinute);
+			newMinute %= 60;
+			
+			//XXX_JS.errorNotification(1, 'Pre Corrected values ' + newHour + ' ' + newMinute + ' ' + newMeridiem);
+			
+			switch (clockType)
+			{
+				case '12':
+					
+					newHour %= 24;
+					
+					if (newMeridiem == false)
+					{
+						if (newHour == 12)
+						{
+							newHour = 0;
+						}
+					}
+					else if (newMeridiem == 'pm')
+					{
+						if (newHour < 12)
+						{
+							newHour += 12;
+						}
+					}
+					
+					break;
+				case '24':
+					newHour %= 24;					
+					break;
+			}
+			
+			if (!(newHour >= 0 && newHour < 24 && newMinute >= 0 && newMinute < 60))
+			{
+				newHour = hour;
+				newMinute = minute;
+			}
+					
+			if (newHour < 12)
+			{
+				newMeridiem = 'am';
+			}
+			else
+			{
+				newMeridiem = 'pm';
+			}
+			
+			//XXX_JS.errorNotification(1, 'Corrected values ' + newHour + ' ' + newMinute + ' ' + newMeridiem);
+		}
+		
+		var result =
+		{
+			original: original,
+			hour: newHour,
+			minute: newMinute,
+			meridiem: newMeridiem
+		};
+		
+		return result;
+	},
+	
+	parseDateValue: function (dateValue, dateFormat)
+	{
+		XXX_JS.errorNotification(1, 'Parsing date value ' + dateValue);
+		
+		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'yearMonthDate');
+		
+		var todaysDate = new XXX_Timestamp();
+		var todaysDateParts = todaysDate.parse();
+				
+		var year = todaysDateParts.year;
+		var month = todaysDateParts.month;
+		var date = todaysDateParts.date;
+		
+		var newYear = year;
+		var newMonth = month;
+		var newDate = date;
+		
+		if (dateValue != '')
+		{
+			dateValue = XXX_String.convertToLowerCase(dateValue);
+			
+			var parts = XXX_String_Pattern.splitToArray(dateValue, '[/\\-., :\'"]+', '');
+			
+				//XXX_JS.errorNotification(1, 'Parsed date parts ' + XXX_String_JSON.encode(parts) + '');
+				
+			var filteredParts = [];
+			
+			for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(parts); i < iEnd; ++i)
+			{
+				var filteredPart = XXX_String.trim(parts[i]);
+				
+				
+				var monthNames = XXX_I18n_Translation.get('dateTime', 'months', 'names');
+				var monthAbbreviations = XXX_I18n_Translation.get('dateTime', 'months', 'abbreviations');
+			
+				var isMonth = false;
+				
+				for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(monthNames); j < jEnd; ++j)
+				{
+					if (XXX_String.convertToLowerCase(monthNames[j]) == XXX_String.convertToLowerCase(filteredPart))
+					{
+						filteredPart = j + 1;
+						
+						isMonth = true;
+						
+						break;
+					}
+				}
+				
+				if (!isMonth)
+				{
+					for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(monthAbbreviations); j < jEnd; ++j)
+					{
+						if (XXX_String.convertToLowerCase(monthAbbreviations[j]) == XXX_String.convertToLowerCase(filteredPart))
+						{
+							filteredPart = j + 1;
+						
+							isMonth = true;
+							
+							break;
+						}
+					}
+				}
+				
+				
+				var isDayOfTheWeek = false;
+			
+				var dayOfTheWeekNames = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'names');
+				var dayOfTheWeekAbbreviations = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'abbreviations');
+				
+				for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(dayOfTheWeekNames); j < jEnd; ++j)
+				{
+					if (XXX_String.convertToLowerCase(dayOfTheWeekNames[j]) == XXX_String.convertToLowerCase(filteredPart))
+					{
+						isDayOfTheWeek = true;
+						
+						break;
+					}
+				}
+				
+				if (!isDayOfTheWeek)
+				{
+					for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(dayOfTheWeekAbbreviations); j < jEnd; ++j)
+					{
+						if (XXX_String.convertToLowerCase(dayOfTheWeekAbbreviations[j]) == XXX_String.convertToLowerCase(filteredPart))
+						{
+							isDayOfTheWeek = true;
+							
+							break;
+						}
+					}
+				}
+				
+				if (!isDayOfTheWeek)
+				{
+						
+					filteredParts.push(filteredPart);
+				}
+			}
+			
+			parts = filteredParts;
+			
+			if (XXX_Array.getFirstLevelItemTotal(parts) == 0)
+			{			
+			}
+			else if (XXX_Array.getFirstLevelItemTotal(parts) == 1)
+			{
+				switch (dateFormat)
+				{
+					case 'dateMonthYear':
+						newDate = XXX_Type.makeInteger(parts[0]);
+						break;
+					case 'monthDateYear':
+						newMonth = XXX_Type.makeInteger(parts[0]);
+						break;
+					case 'yearMonthDate':
+						newYear = XXX_Type.makeInteger(parts[0]);
+						break;
+				}
+			}
+			else if (XXX_Array.getFirstLevelItemTotal(parts) == 2)
+			{
+				switch (dateFormat)
+				{
+					case 'dateMonthYear':
+						newDate = XXX_Type.makeInteger(parts[0]);
+						if (parts[1] != '')
+						{
+							newMonth = XXX_Type.makeInteger(parts[1]);
+						}
+						break;
+					case 'monthDateYear':
+						newMonth = XXX_Type.makeInteger(parts[0]);
+						if (parts[1] != '')
+						{
+							newDate = XXX_Type.makeInteger(parts[1]);
+						}
+						break;
+					case 'yearMonthDate':
+						newYear = XXX_Type.makeInteger(parts[0]);
+						if (parts[1] != '')
+						{
+							newMonth = XXX_Type.makeInteger(parts[1]);
+						}
+						break;
+				}
+			}
+			else if (XXX_Array.getFirstLevelItemTotal(parts) >= 3)
+			{
+				switch (dateFormat)
+				{
+					case 'dateMonthYear':
+						newDate = XXX_Type.makeInteger(parts[0]);
+						newMonth = XXX_Type.makeInteger(parts[1]);
+						if (parts[2] != '')
+						{
+							newYear = XXX_Type.makeInteger(parts[2]);
+						}
+						break;
+					case 'monthDateYear':
+						newMonth = XXX_Type.makeInteger(parts[0]);
+						newDate = XXX_Type.makeInteger(parts[1]);
+						if (parts[2] != '')
+						{
+							newYear = XXX_Type.makeInteger(parts[2]);
+						}
+						break;
+					case 'yearMonthDate':
+						newYear = XXX_Type.makeInteger(parts[0]);
+						newMonth = XXX_Type.makeInteger(parts[1]);
+						if (parts[2] != '')
+						{
+							newDate = XXX_Type.makeInteger(parts[2]);
+						}
+						break;
+				}
+			}
+			
+			newMonth = XXX_Number.absolute(newMonth);			
+			newMonth %= 12;
+			if (newMonth == 0)
+			{
+				newMonth = 12;
+			}
+			
+			newDate = XXX_Number.absolute(newDate);
+			newDate %= 31;
+			if (newDate == 0)
+			{
+				newDate = 31;
+			}
+			
+			if (newYear >= 0 && newYear <= 100)
+			{
+				var currentYear = XXX_TimestampHelpers.getCurrentYear();
+				var tempFutureYear = 2000 + newYear;
+				var tempPastYear = 1900 + newYear;
+				
+				if (tempFutureYear <= currentYear + 10)
+				{
+					newYear = tempFutureYear;
+				}
+				else
+				{
+					newYear = tempPastYear;
+				}
+			}
+			
+			if (!XXX_TimestampHelpers.isExistingDate(newYear, newMonth, newDate))
+			{
+				//XXX_JS.errorNotification(1, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
+				
+				newDate = date;
+				newMonth = month;
+				newYear = year;
+			}
+			
+			//XXX_JS.errorNotification(1, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
+		}
+				
+		var result =
+		{
+			date: newDate,
+			month: newMonth,
+			year: newYear
 		};
 		
 		return result;

@@ -284,7 +284,7 @@ var XXX_String_HTMLEntities =
 		d = this.convertNamedToNumbered(d);
 		
 		// look for numbered entities &#34;
-		matches = XXX_String_Pattern.getMatches(d, '&#[0-9]{1,5};', '');
+		var matches = XXX_String_Pattern.getMatches(d, '&#[0-9]{1,5};', '');
 		
 		var iEnd = XXX_Array.getFirstLevelItemTotal(matches[0]);
 		

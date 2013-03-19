@@ -326,3 +326,8 @@ var XXX_String_Unicode =
 		return decoded;
 	}
 };
+
+XXX_DOM_Ready.addEventListener(function ()
+{
+	XXX_String_Unicode.initialize();
+});
