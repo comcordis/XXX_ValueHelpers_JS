@@ -325,23 +325,42 @@ var XXX_Array =
 		var arraySize = 0;
 				
 		if (XXX_Type.isNumericArray(array))
-		{
+		{			
 			arraySize = array.length;
 		}
 		else if (XXX_Type.isAssociativeArray(array))
-		{
-			for (var i in array)
+		{		
+			var hasLength = array.length;
+			if (XXX_Type.isInteger(hasLength))
 			{
-				if (array[i])
+				arraySize = hasLength;
+			}
+			else
+			{	
+				for (var i in array)
 				{
-					++arraySize;
+					if (array[i])
+					{
+						++arraySize;
+					}
 				}
 			}
 		}
 		
-		// TODO fix this...
-		arraySize = array.length;
-				
+		//XXX_JS.errorNotification(1, (typeof array) + ' ' + arraySize);
+		
+		/*
+		
+		if (XXX_Type.isArray(array))
+		{
+			// TODO fix this...
+			arraySize = array.length;
+		}
+		else 
+		
+		*/
+		//arraySize = array.length;
+						
 		return arraySize;
 	},
 	
@@ -438,6 +457,20 @@ var XXX_Array =
 		}
 		
 		return depthCount;
+	},
+	
+	////////////////////
+	// Part
+	////////////////////
+	
+	getPart: function (array, offset, length)
+	{
+		offset = XXX_Default.toInteger(offset, 0);
+		length = XXX_Default.toInteger(length, 0);
+		
+		var result = array.slice(offset, length);
+		
+		return result;
 	},
 	
 	////////////////////
@@ -626,7 +659,7 @@ var XXX_Array =
 		{
 			var tempValue = array[i];
 			
-			if (!XXX_Type.isValue(tempValue))
+			if (XXX_Type.isValue(tempValue))
 			{
 				cleanArray.push(tempValue);
 			}

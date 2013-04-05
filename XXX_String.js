@@ -95,9 +95,14 @@ var XXX_String =
 	{
 		offset = XXX_Type.isInteger(offset) ? offset : 0;
 		
-		var result = -1;
+		var result = false;
 		
 		result = hayStack.indexOf(needle, offset);
+		
+		if (result === -1)
+		{
+			result = false;
+		}
 		
 		return result;
 	},
@@ -107,9 +112,14 @@ var XXX_String =
 	{
 		offset = XXX_Type.isInteger(offset) ? offset : 0;
 		
-		var result = -1;
+		var result = false;
 		
 		result = hayStack.lastIndexOf(needle, offset);
+		
+		if (result === -1)
+		{
+			result = false;
+		}
 		
 		return result;
 	},
@@ -210,7 +220,6 @@ var XXX_String =
 	
 	clearVariables: function (subject)
 	{
-		
 		return XXX_String_Pattern.replace(subject, this.variableDelimiter.start + '[\\w]*' + this.variableDelimiter.end, 'i', '');
 	},
 	

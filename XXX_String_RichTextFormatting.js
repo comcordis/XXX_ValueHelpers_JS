@@ -351,7 +351,7 @@ var XXX_String_RichTextFormatting =
 				{
 					temp += '<a';
 					
-					if (XXX_String.findFirstPosition(linkTag.value, '.') != -1 && !XXX_String.beginsWith(linkTag.value, '#'))
+					if (XXX_String.findFirstPosition(linkTag.value, '.') !== false && !XXX_String.beginsWith(linkTag.value, '#'))
 					{
 						if (!(XXX_String.beginsWith(linkTag.value, 'http://') || XXX_String.beginsWith(linkTag.value, 'https://')))
 						{
@@ -563,7 +563,7 @@ var XXX_String_RichTextFormatting =
 				var videoID = false;
 								
 				// YouTube Video
-				if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'youtube.com') != -1)
+				if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'youtube.com') !== false)
 				{
 					/*
 					http://www.youtube.com/v/kG2BYhjQIKQ&hl=en_US&fs=1
@@ -580,7 +580,7 @@ var XXX_String_RichTextFormatting =
 				}
 				
 				// Google Video
-				else if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'video.google.com') != -1)
+				else if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'video.google.com') !== false)
 				{
 					/*
 					http://video.google.com/googleplayer.swf?docid=-8967914974980683249&hl=en&fs=true
@@ -597,7 +597,7 @@ var XXX_String_RichTextFormatting =
 				}
 				
 				// Vimeo video
-				else if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'vimeo.com') != -1)
+				else if (XXX_String.findFirstPosition(XXX_String.convertToLowerCase(videoTag.attributes.source), 'vimeo.com') !== false)
 				{
 					/*
 					http://vimeo.com/moogaloop.swf?clip_id=8423116&server=vimeo.com&show_title=1&show_byline=1&show_portrait=0&color=&fullscreen=1

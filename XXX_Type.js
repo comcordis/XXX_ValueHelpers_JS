@@ -319,6 +319,6 @@ var XXX_Type =
 	
 	isVariableUndefined: function (value)
 	{
-		return typeof value === 'undefined' || value === undefined || value === 'undefined';
+		return typeof value === 'undefined' || value === undefined;
 	}
 };

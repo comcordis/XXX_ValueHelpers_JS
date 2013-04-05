@@ -1252,11 +1252,11 @@ var XXX_TimestampHelpers =
 				
 				var temp = XXX_String.trim(matches[3][0]);
 				
-				if (XXX_String.findFirstPosition(temp, 'a') > -1)
+				if (XXX_String.findFirstPosition(temp, 'a') !== false)
 				{
 					newMeridiem = 'am';
 				}
-				else if (XXX_String.findFirstPosition(temp, 'p') > -1)
+				else if (XXX_String.findFirstPosition(temp, 'p') !== false)
 				{
 					newMeridiem = 'pm';
 				}
