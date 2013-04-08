@@ -38,5 +38,26 @@ var XXX_String_Levenshtein =
 		}
 		
 		return r[m][n];
+	},
+	
+	getInformation: function (a, b)
+	{
+		var levenshteinDistance = XXX_String_Levenshtein.getDistance(a, b);
+		
+		var identical = levenshteinDistance === 0;
+		
+		var longestCharacterLength = XXX_Number.highest(XXX_String.getCharacterLength(a), XXX_String.getCharacterLength(b));
+		
+		// Percentage identical
+		var percentage = (1 - (levenshteinDistance / longestCharacterLength)) * 100;
+		
+		var result =
+		{
+			identical: identical,
+			distance: levenshteinDistance,
+			percentage: percentage			
+		};
+		
+		return result;
 	}
 };

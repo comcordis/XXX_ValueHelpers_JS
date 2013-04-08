@@ -93,10 +93,10 @@ var XXX_String_Pattern =
 		var tempPattern = new RegExp(pattern, patternModifiers + (disableGlobalPatternModifier ? '' : 'g'));
 		
 		var result = [];
-		
+				
 		var matches = tempPattern.exec(string);
 		
-		var i = 0;
+		var j = 0;
 		
 		while (matches)
 		{
@@ -115,7 +115,14 @@ var XXX_String_Pattern =
 				}
 			}
 			
-			matches = tempPattern.exec(string)
+			matches = tempPattern.exec(string);
+			
+			++j;
+			
+			if (j > 1000)
+			{
+				break;
+			}
 		}
 		
 		return result;

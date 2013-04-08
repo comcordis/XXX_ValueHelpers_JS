@@ -229,4 +229,9 @@ var XXX_Number =
 	{		
 		return Math.atan(number);
 	},
+	
+	log: function (number)
+	{
+		return Math.log(number);
+	}
 };
