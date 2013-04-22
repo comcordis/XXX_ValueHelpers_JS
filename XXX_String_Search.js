@@ -1,34 +1,36 @@
 var XXX_String_Search =
 {
+	separatorPattern: ['\\s*[,\\-()\\s/]\\s*', 'm'],
+	
 	////////////////////
 	// Terms (Split by , ( ) or space)
 	////////////////////
 	
-	splitToTerms: function (sentence)
+	splitToTerms: function (sentence, sorted)
 	{
 		sentence = XXX_Type.makeString(sentence);
 		
-		var terms = XXX_String_Pattern.splitToArray(sentence, '\\s*(?:,|\\(|\\)|\\s|-)\\s*', '');
+		var terms = XXX_String_Pattern.splitToArray(sentence, this.separatorPattern[0], this.separatorPattern[1]);
 		
 		terms = XXX_Array.filterOutEmpty(terms);
 		
-		// From longest to shortest
-		terms.sort(function (a, b)
+		if (sorted)
 		{
-			return XXX_String.getCharacterLength(b) - XXX_String.getCharacterLength(a);
-		});
+			// From longest to shortest
+			terms.sort(function (a, b)
+			{
+				return XXX_String.getCharacterLength(b) - XXX_String.getCharacterLength(a);
+			});
+		}
 		
 		return terms;
 	},
 	
-	getTermInformation: function (subject)
+	getRawParts: function (value)
 	{
-		var termsPattern = '(.*?)(\\s*[,\\-()\\s]\\s*)|(.+)';
-		var termsPatternModifiers = 'm';
-		
-		var matches = XXX_String_Pattern.getMatches(subject, termsPattern, termsPatternModifiers);
-		
-		var terms = [];
+		var matches = XXX_String_Pattern.getMatches(value, '(.*?)(' + this.separatorPattern[0] + ')|(.+)', this.separatorPattern[1]);
+			
+		var result = [];
 		
 		var offset = 0;
 		
@@ -40,579 +42,861 @@ var XXX_String_Search =
 				{
 					var characterLength = XXX_String.getCharacterLength(matches[j][i]);
 					
-					terms.push({offset: offset, characterLength: characterLength, value: matches[j][i], type: ((j == 2) ? 'separator' : 'term')});
-						
-					offset += XXX_String.getCharacterLength(matches[j][i]);
+					result.push(
+					{
+						offset: offset,
+						characterLength: characterLength,
+						value: matches[j][i],
+						partType: (j == 2) ? 'separator' : 'term'
+					});
+					
+					offset += characterLength;
 				}
-			}
-		}
-		
-		var result = [];
-		var rawCharacterOffset = 0;
-		var simplifiedCharacterOffset = 0;
-		
-		for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(terms); i < iEnd; ++i)
-		{
-			var term = terms[i];
-			
-			switch (term.type)
-			{
-				case 'separator':
-					temp = {};
-					temp.type = 'separator';
-					
-					temp.value = term.value;
-					temp.characterLength = term.characterLength;
-					temp.rawOffset = rawCharacterOffset;
-					temp.simplifiedOffset = simplifiedCharacterOffset;
-					
-					result.push(temp);
-					
-					if (temp.rawCharacterLength > 0)
-					{
-						rawCharacterOffset += temp.rawCharacterLength;
-					}
-					if (temp.rawCharacterLength > 0)
-					{
-						simplifiedCharacterOffset += temp.rawCharacterLength;
-					}
-					break;
-				case 'term':
-					var temp = {};
-					temp.type = 'term';
-					
-					temp.rawTerm = term.value;
-					temp.rawCharacterLength = XXX_String.getCharacterLength(temp.rawTerm);
-					temp.rawOffset = rawCharacterOffset;
-					
-					temp.simplifiedTerm = '';
-					temp.simplifiedCharacterLength = 0;
-					temp.simplifiedOffset = simplifiedCharacterOffset;
-					
-					// TODO only if characterLength is not the same
-					temp.simplifiedToRawMapping = [];
-					
-					temp.rawCharacterSwitches = [];
-					temp.simplifiedCharacterSwitches = [];
-					
-					var tempSimplifiedExtraOffset = 0;
-					
-					for (var j = 0, jEnd = XXX_String.getCharacterLength(temp.rawTerm); j < jEnd; ++j)
-					{
-						var rawCharacter = XXX_String.getPart(temp.rawTerm, j, 1);
-						
-						
-						temp.rawCharacterSwitches.push(false);
-						
-						var rawCharacterSimplified = XXX_String.simplifyCharacters(rawCharacter);
-						
-						var rawCharacterSimplifiedCharacterLength = XXX_String.getCharacterLength(rawCharacterSimplified);
-						
-						if (rawCharacterSimplifiedCharacterLength > 1)
-						{
-							for (var k = 0, kEnd = rawCharacterSimplifiedCharacterLength; k < kEnd; ++k)
-							{
-								temp.simplifiedTerm += XXX_String.getPart(rawCharacterSimplified, k, 1);
-								
-								temp.simplifiedToRawMapping.push(j);
-								
-								temp.simplifiedCharacterSwitches.push(false);
-								
-								++temp.simplifiedCharacterLength;
-								++tempSimplifiedExtraOffset;
-							}
-						}
-						else
-						{
-							temp.simplifiedTerm += rawCharacterSimplified;
-							
-							temp.simplifiedToRawMapping.push(j);
-							
-							temp.simplifiedCharacterSwitches.push(false);
-							
-							++temp.simplifiedCharacterLength;
-							++tempSimplifiedExtraOffset;
-						}
-					}
-					
-					result.push(temp);
-					
-					if (temp.rawCharacterLength > 0)
-					{
-						rawCharacterOffset += temp.rawCharacterLength;
-					}
-					if (temp.simplifiedCharacterLength > 0)
-					{
-						simplifiedCharacterOffset += temp.simplifiedCharacterLength;
-					}
-					break;
 			}
 		}
 		
 		return result;
 	},
 	
-	resetCharacterSwitchesForSourceTermInformation: function (sourceTermInformation)
+	composeValueInformationSub: function (value, characterMatchingMode)
 	{
-		for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(sourceTermInformation); i < iEnd; ++i)
+		var result = {};
+		
+		result.rawValue = value;
+		result.rawCharacterLength = XXX_String.getCharacterLength(value);
+		
+		if (characterMatchingMode == 'simplified')
 		{
-			var sourceTerm = sourceTermInformation[i];
+			result.simplifiedValue = '';
+			result.simplifiedCharacterLength = 0;
 			
-			sourceTerm.rawCharacterSwitches = [];
+			result.simplifiedToRawMapping = [];
 			
-			for (var j = 0, jEnd = sourceTerm.rawCharacterLength; j < jEnd; ++j)
+			for (var i = 0, iEnd = result.rawCharacterLength; i < iEnd; ++i)
 			{
-				sourceTerm.rawCharacterSwitches.push(false);
-			}
-			
-			sourceTerm.simplifiedCharacterSwitches = [];
-			
-			for (var j = 0, jEnd = sourceTerm.simplifiedCharacterLength; j < jEnd; ++j)
-			{
-				sourceTerm.simplifiedCharacterSwitches.push(false);
-			}
-			
-			sourceTermInformation[i] = sourceTerm;
-		}
-		
-		return sourceTermInformation;
-	},
-	
-	matchSourceTermInformationWithQueryTermInformation: function (sourceTermInformation, queryTermInformation)
-	{
-		var minimumLevenshteinPercentage = 50;
-		
-		
-		for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(sourceTermInformation); i < iEnd; ++i)
-		{
-			var sourceTerm = sourceTermInformation[i];
-			
-			if (sourceTerm.type == 'term')
-			{
-				for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(queryTermInformation); j < jEnd; ++j)
+				var rawCharacter = XXX_String.getPart(result.rawValue, i, 1);
+				
+				var simplifiedCharacter = XXX_String.simplifyCharacters(rawCharacter);
+				var simplifiedCharacterCharacterLength = XXX_String.getCharacterLength(simplifiedCharacter);
+				
+				if (simplifiedCharacterCharacterLength > 1)
 				{
-					var queryTerm = queryTermInformation[j];
-					
-					if (queryTerm.type == 'term')
+					for (var j = 0, jEnd = simplifiedCharacterCharacterLength; j < jEnd; ++j)
 					{
-						var matchAtCharacterPosition = XXX_String.findFirstPosition(sourceTerm.simplifiedTerm, queryTerm.simplifiedTerm);
+						result.simplifiedValue += XXX_String.getPart(simplifiedCharacter, j, 1);
 						
-						var matchType = false;
-						var matchOffset = 0;
-						var matchCharacterLength = 0;						
+						result.simplifiedToRawMapping.push(i);
 						
-						if (matchAtCharacterPosition === 0)
-						{
-							matchType = 'literalFromBeginning';
-							matchCharacterLength = queryTerm.simplifiedCharacterLength;
-							
-						}
-						else if (matchAtCharacterPosition > 0)
-						{
-							matchType = 'literalAnywhereWithin';
-							matchOffset = matchAtCharacterPosition;
-							matchCharacterLength = queryTerm.simplifiedCharacterLength;
-						}
-						else
-						{
-							if (queryTerm.simplifiedCharacterLength < sourceTerm.simplifiedCharacterLength)
-							{
-								var characterLengthDifference = sourceTerm.simplifiedCharacterLength - queryTerm.simplifiedCharacterLength;
-								
-								var tempOffsetPercentages = [];
-								
-								for (var k = 0, kEnd = characterLengthDifference; k < kEnd; ++k)
-								{
-									var simplifiedSourceTermPart = XXX_String.getPart(sourceTerm.simplifiedTerm, k, queryTerm.simplifiedCharacterLength);
-									
-									var levenshteinInformation = XXX_String_Levenshtein.getInformation(queryTerm.simplifiedTerm, simplifiedSourceTermPart);
-									
-									XXX_JS.errorNotification(1, simplifiedSourceTermPart + '|' + queryTerm.simplifiedTerm + '|' + levenshteinInformation.percentage + '%');
-									
-									if (levenshteinInformation.percentage >= minimumLevenshteinPercentage)
-									{
-										tempOffsetPercentages.push([k, levenshteinInformation.percentage]);
-									}
-								}
-								
-								if (XXX_Array.getFirstLevelItemTotal(tempOffsetPercentages))
-								{
-									tempOffsetPercentages.sort(function (a, b)
-									{
-										return b[1] - a[1];
-									});
-									
-									var tempOffset = tempOffsetPercentages[0][0];
-									var tempPercentage = tempOffsetPercentages[0][1];
-									
-									if (tempOffset == 0)
-									{
-										matchType = 'levenshteinFromBeginning';
-										matchOffset = 0;
-										matchCharacterLength = queryTerm.simplifiedCharacterLength;
-									}
-									else
-									{
-										matchType = 'levenshteinAnywhereWithin';
-										matchOffset = tempOffset;
-										matchCharacterLength = queryTerm.simplifiedCharacterLength;
-									}
-								}
-							}
-							else
-							{
-								var sourceIsAtLeatHalfAsLongAsQuery = true;
-							
-								if (queryTerm.simplifiedCharacterLength > sourceTerm.simplifiedCharacterLength)
-								{
-									var halfQueryCharacterLength = XXX_Number.round(queryTerm.simplifiedCharacterLength / 2);
-									
-									if (sourceTerm.simplifiedCharacterLength < halfQueryCharacterLength)
-									{
-										sourceIsAtLeatHalfAsLongAsQuery = false;
-									}
-								}
-								
-								if (sourceIsAtLeatHalfAsLongAsQuery)
-								{							
-									var a = sourceTerm.simplifiedTerm;
-									var b = queryTerm.simplifiedTerm;
-									var characterLength = sourceTerm.simplifiedCharacterLength;
-									
-									var levenshteinInformation = XXX_String_Levenshtein.getInformation(sourceTerm.simplifiedTerm, queryTerm.simplifiedTerm);
-									
-									if (levenshteinInformation.percentage >= minimumLevenshteinPercentage)
-									{
-										matchType = 'levenshteinFromBeginning';
-										matchCharacterLength = queryTerm.simplifiedCharacterLength;
-									}
-								}
-								
-								
-							}
-							
-							
-							
-						}
-						
-						if (matchType !== false)
-						{
-							for (var k = matchOffset, kEnd = matchOffset + matchCharacterLength; k < kEnd; ++k)
-							{
-								// Simplified
-								
-								var previousSimplifiedCharacterSwitch = sourceTerm.simplifiedCharacterSwitches[k];
-								
-								switch (previousSimplifiedCharacterSwitch)
-								{
-									case 'literalFromBeginning':
-										
-										break;
-									case 'literalAnywhereWithin':
-										if (matchType == 'literalFromBeginning')
-										{
-											sourceTerm.simplifiedCharacterSwitches[k] = matchType;
-										}
-										break;
-									case 'levenshteinFromBeginning':
-										if (matchType == 'literalFromBeginning' || matchType == 'literalAnywhereWithin')
-										{
-											sourceTerm.simplifiedCharacterSwitches[k] = matchType;
-										}
-										break;
-									case 'levenshteinAnywhereWithin':
-										if (matchType == 'literalFromBeginning' || matchType == 'literalAnywhereWithin' || matchType == 'levenshteinFromBeginning')
-										{
-											sourceTerm.simplifiedCharacterSwitches[k] = matchType;
-										}
-										break;
-									case false:
-										sourceTerm.simplifiedCharacterSwitches[k] = matchType;
-										break;
-								}
-								
-								// Raw
-								
-								var rawCharacterIndex = sourceTerm.simplifiedToRawMapping[k];
-								
-								var previousRawCharacterSwitch = sourceTerm.rawCharacterSwitches[rawCharacterIndex];
-								
-								switch (previousRawCharacterSwitch)
-								{
-									case 'literalFromBeginning':
-										
-										break;
-									case 'literalAnywhereWithin':
-										if (matchType == 'literalFromBeginning')
-										{
-											sourceTerm.rawCharacterSwitches[rawCharacterIndex] = matchType;
-										}
-										break;
-									case 'levenshteinFromBeginning':
-										if (matchType == 'literalFromBeginning' || matchType == 'literalAnywhereWithin')
-										{
-											sourceTerm.rawCharacterSwitches[rawCharacterIndex] = matchType;
-										}
-										break;
-									case 'levenshteinAnywhereWithin':
-										if (matchType == 'literalFromBeginning' || matchType == 'literalAnywhereWithin' || matchType == 'levenshteinFromBeginning')
-										{
-											sourceTerm.rawCharacterSwitches[rawCharacterIndex] = matchType;
-										}
-										break;
-									case false:
-										sourceTerm.rawCharacterSwitches[rawCharacterIndex] = matchType;
-										break;
-								}
-							}
-						}
-						
-						sourceTermInformation[i] = sourceTerm;
+						++result.simplifiedCharacterLength;
 					}
+				}
+				else
+				{
+					result.simplifiedValue += simplifiedCharacter;
+					
+					result.simplifiedToRawMapping.push(i);
+					
+					++result.simplifiedCharacterLength;
 				}
 			}
 		}
 		
-		return sourceTermInformation;
+		return result;
 	},
 	
-	composeLabelFromSourceTermInformation: function (sourceTermInformation)
+	composeValueInformation: function (value, termMode, characterMatchingMode)
+	{
+		var result = false;
+		
+		switch (termMode)
+		{
+			case 'split':
+				var parts = this.getRawParts(value);
+				var newParts = [];
+				
+				for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(parts); i < iEnd; ++i)
+				{
+					var part = parts[i];
+				
+					var newPart = false;
+					
+					switch (part.partType)
+					{
+						case 'separator':
+							newPart = this.composeValueInformationSub(part.value);
+							break;
+						case 'term':
+							newPart = this.composeValueInformationSub(part.value, characterMatchingMode);
+							break;
+					}
+					
+					newPart.partType = part.partType;
+					newParts.push(newPart);
+				}
+				
+				result = newParts;
+				break;
+			case 'full':
+			default:
+				result = this.composeValueInformationSub(value, characterMatchingMode);
+				break;
+		}
+		
+		return result;
+	},
+		
+	composeMatcher: function (sourceIndex, valueInformation, termMode, characterMatchingMode)
+	{
+		var result = {};
+		
+		result.sourceIndex = sourceIndex;
+		result.bestMatchType = false;
+		result.identicalCharacterHitTotal = 0;
+		result.similarCharacterHitTotal = 0;
+		result.levenshteinDistanceTotal = 0;
+		result.termHitTotal = 0;
+		
+		result.lowestMatchOffset = 10000;
+		
+		result.characterLength = 0;
+				
+		switch (termMode)
+		{
+			case 'split':
+				result.parts = [];
+				
+				for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(valueInformation); i < iEnd; ++i)
+				{
+					var valueInformationSub = valueInformation[i];
+				
+					var matcherPart = {};
+					matcherPart.partType = valueInformationSub.partType;
+					
+					matcherPart.rawCharacterLength = valueInformationSub.rawCharacterLength;
+					
+					if (characterMatchingMode == 'simplified')
+					{
+						matcherPart.simplifiedCharacterLength = valueInformationSub.simplifiedCharacterLength;
+					}
+					
+					result.characterLength += valueInformationSub.rawCharacterLength;
+					
+					switch (matcherPart.partType)
+					{
+						case 'separator':
+							break;
+						case 'term':
+							
+							matcherPart.rawCharacterHits = [];
+				
+							for (var j = 0, jEnd = matcherPart.rawCharacterLength; j < jEnd; ++j)
+							{
+								matcherPart.rawCharacterHits.push(false);
+							}
+							
+							if (characterMatchingMode == 'simplified')
+							{
+								matcherPart.simplifiedCharacterHits = [];
+								
+								for (var j = 0, jEnd = matcherPart.simplifiedCharacterLength; j < jEnd; ++j)
+								{
+									matcherPart.simplifiedCharacterHits.push(false);
+								}
+							}
+							break;
+					}
+					
+					result.parts.push(matcherPart);
+				}
+			break;
+			case 'full':
+			default:
+				result.characterLength = valueInformation.rawCharacterLength;
+				
+				result.rawCharacterLength = valueInformation.rawCharacterLength;
+				
+				result.rawCharacterHits = [];
+				
+				for (var i = 0, iEnd = result.rawCharacterLength; i < iEnd; ++i)
+				{
+					result.rawCharacterHits.push(false);
+				}
+				
+				if (characterMatchingMode == 'simplified')
+				{
+					result.simplifiedCharacterLength = valueInformation.simplifiedCharacterLength;
+					
+					result.simplifiedCharacterHits = [];
+					
+					for (var i = 0, iEnd = result.simplifiedCharacterLength; i < iEnd; ++i)
+					{
+						result.simplifiedCharacterHits.push(false);
+					}
+				}
+				break;
+		}
+		
+		return result;
+	},
+	
+		getMatcherSortNumber: function (matcher)
+		{
+			var result = 0;
+			
+			if (!XXX_Type.isAssociativeArray(matcher))
+			{
+				result = 1;
+			}
+			
+			return result;
+		},
+		
+		getTermModeSortNumber: function (termMode)
+		{
+			var result = 0;
+			
+			switch (termMode)
+			{
+				case 'full':
+					result = 1;
+					break;
+				case 'split':
+					result = 2;
+					break;
+				case false:
+				default:
+					result = 3;
+					break;
+			}
+			
+			return result;
+		},
+		
+		getMatchTypeSortNumber: function (matchType)
+		{
+			var result = 0;
+			
+			switch (matchType)
+			{
+				case 'identical':
+					result = 1;
+					break;
+				case 'similar':
+					result = 2;
+					break;
+				case false:
+				default:
+					result = 3;
+					break;
+			}
+			
+			return result;
+		},
+			
+	compareMatchers: function (a, b)
+	{
+		var result = 0;
+		
+		result = this.getMatcherSortNumber(a) - this.getMatcherSortNumber(b);
+		
+		if (result == 0)
+		{
+			result = this.getMatchTypeSortNumber(a.bestMatchType) - this.getMatchTypeSortNumber(b.bestMatchType);
+			/*
+			if (result == 0)
+			{
+				result = this.getTermModeSortNumber(a.termMode) - this.getTermModeSortNumber(b.termMode);
+			*/
+				if (result == 0)
+				{
+					result = b.termHitTotal - a.termHitTotal;
+					
+					if (result == 0)
+					{
+						result = (b.identicalCharacterHitTotal + b.similarCharacterHitTotal) - (a.identicalCharacterHitTotal + a.identicalCharacterHitTotal);
+												
+						if (result == 0)
+						{						
+							result = b.identicalCharacterHitTotal - a.identicalCharacterHitTotal;
+													
+							if (result == 0)
+							{
+								result = b.similarCharacterHitTotal - a.similarCharacterHitTotal;
+								
+								if (result == 0)
+								{
+									result = a.levenshteinDistanceTotal - b.levenshteinDistanceTotal;
+									
+									if (result == 0)
+									{
+										result = a.characterLength - b.characterLength;
+										
+										if (result == 0)
+										{
+											result = a.lowestMatchOffset - b.lowestMatchOffset;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			//}
+		}
+		
+		return result;
+	},
+	
+	isBetterMatchType: function (oldMatchType, newMatchType)
+	{
+		var result = false;
+		
+		switch (oldMatchType)
+		{
+			case 'identical':											
+				break;
+			case 'similar':
+				if (newMatchType == 'identical')
+				{
+					result = true;
+				}
+				break
+			case false:
+				result = true;
+				break;
+		}
+		
+		return result;
+	},
+	
+	applyCharacterHitsToMatcher: function (matcher, valueInformationSub, characterMatchingMode, matchType, matchOffset, matchCharacterLength)
+	{
+		for (var i = matchOffset, iEnd = matchOffset + matchCharacterLength; i < iEnd; ++i)
+		{
+			switch (characterMatchingMode)
+			{
+				case 'raw':
+					if (this.isBetterMatchType(matcher.rawCharacterHits[i], matchType))
+					{
+						matcher.rawCharacterHits[i] = matchType;
+					}
+					break;
+				case 'simplified':
+						if (this.isBetterMatchType(matcher.simplifiedCharacterHits[i], matchType))
+						{
+							matcher.simplifiedCharacterHits[i] = matchType;
+						}
+					
+						var rawCharacterIndex = valueInformationSub.simplifiedToRawMapping[i];
+						
+						if (this.isBetterMatchType(matcher.rawCharacterHits[rawCharacterIndex], matchType))
+						{
+							matcher.rawCharacterHits[rawCharacterIndex] = matchType;
+						}
+					break;
+			}
+		}
+		
+		return matcher;
+	},
+	
+	getMaximumLevenshteinDistanceForCharacterLength: function (characterLength)
+	{
+		var result = 0;
+		
+		if (characterLength > 2)
+		{
+			result = XXX_Number.floor(characterLength * 0.4);
+			
+			result = XXX_Number.lowest(result, 3);
+		}
+		
+		return result;
+	},
+	
+	compareTemporarySimilarMatches: function (a, b)
+	{
+		var result = 0;
+		
+		result = a[0] - b[0];
+		
+		if (result == 0)
+		{		
+			result = a[2] - b[2];
+			
+			if (result == 0)
+			{
+				result = a[1] - b[1];
+			}
+		}
+		
+		return result;
+	},
+	
+	getMatchInformation: function (source, query, sourceCharacterLength, queryCharacterLength)
+	{
+		if (!sourceCharacterLength)
+		{
+			sourceCharacterLength = XXX_String.getCharacterLength(source);
+		}
+		
+		if (!queryCharacterLength)
+		{
+			queryCharacterLength = XXX_String.getCharacterLength(query);
+		}
+			
+		var result = false;
+		
+		var matchType = false;
+		var matchOffset = 0;
+		var matchCharacterLength = 0;
+		var matchLevenshteinDistance = 0;
+		
+		var matchAtCharacterPosition = XXX_String.findFirstPosition(source, query);
+				
+		if (matchAtCharacterPosition !== false)
+		{
+			matchType = 'identical';
+			matchOffset = matchAtCharacterPosition;
+			matchCharacterLength = queryCharacterLength;
+		}
+		else
+		{
+			if (queryCharacterLength > 2)
+			{
+				var maximumLevenshteinDistance = this.getMaximumLevenshteinDistanceForCharacterLength(queryCharacterLength);
+				
+				if (maximumLevenshteinDistance > 0)
+				{
+					if (queryCharacterLength < sourceCharacterLength)
+					{
+						var characterLengthDifference = sourceCharacterLength - queryCharacterLength;
+						
+						var temporarySimilarMatches = [];
+							
+						for (var i = 0, iEnd = characterLengthDifference; i < iEnd; ++i)
+						{
+							var sourcePart = XXX_String.getPart(source, i, queryCharacterLength);
+							
+							var levenshteinDistance = XXX_String_Levenshtein.getDistance(query, sourcePart);
+							
+							if (levenshteinDistance <= maximumLevenshteinDistance)
+							{
+								var expandingOffset = i;
+								var expandingLevenshteinDistance = levenshteinDistance;
+								var expandingCharacterLength = queryCharacterLength;
+								
+								var extraExpandingCharacterLength = characterLengthDifference - i;
+								
+								if (extraExpandingCharacterLength > 0)
+								{
+									for (var j = queryCharacterLength + 1, jEnd = queryCharacterLength + extraExpandingCharacterLength; j <= jEnd; ++j)
+									{
+										var sourcePartSub = XXX_String.getPart(source, i, j);
+										
+										var levenshteinDistanceSub = XXX_String_Levenshtein.getDistance(query, sourcePartSub);
+										
+										if (levenshteinDistanceSub <= expandingLevenshteinDistance)
+										{
+											expandingLevenshteinDistance = levenshteinDistanceSub;
+											expandingCharacterLength = j;
+										}
+										else
+										{
+											break;
+										}
+									}
+									
+									temporarySimilarMatches.push([expandingOffset, expandingLevenshteinDistance, expandingCharacterLength]);
+								}
+								else
+								{
+									temporarySimilarMatches.push([i, levenshteinDistance, queryCharacterLength]);
+								}
+							}
+						}
+						
+						if (XXX_Array.getFirstLevelItemTotal(temporarySimilarMatches))
+						{
+							temporarySimilarMatches.sort(function (a, b)
+							{
+								return XXX_String_Search.compareTemporarySimilarMatches(a, b);
+							});
+							
+							var tempOffset = temporarySimilarMatches[0][0];
+							var tempDistance = temporarySimilarMatches[0][1];
+							var tempCharacterLength = temporarySimilarMatches[0][2];
+							
+							matchType = 'similar';
+							matchOffset = tempOffset;
+							matchCharacterLength = tempCharacterLength;
+							matchLevenshteinDistance = tempDistance;
+						}
+					}
+					else
+					{
+						var sourceIsLongEnough = true;
+						
+						if (queryCharacterLength > sourceCharacterLength)
+						{
+							var minimumCharacterLength = XXX_Number.highest(queryCharacterLength - maximumLevenshteinDistance, 0);
+							
+							if (sourceCharacterLength < minimumCharacterLength)
+							{
+								sourceIsLongEnough = false;
+							}
+						}
+						
+						if (sourceIsLongEnough)
+						{
+							var levenshteinDistance = XXX_String_Levenshtein.getDistance(source, query);
+							
+							if (levenshteinDistance <= maximumLevenshteinDistance)
+							{
+								matchType = 'similar';
+								matchCharacterLength = queryCharacterLength;						
+								matchLevenshteinDistance = levenshteinDistance;
+							}
+						}
+					}
+				
+				}
+			}
+		}
+		
+		if (matchType !== false)
+		{
+			result =
+			{
+				matchType: matchType,
+				matchOffset: matchOffset,
+				matchCharacterLength: matchCharacterLength,
+				matchLevenshteinDistance: matchLevenshteinDistance
+			};
+		}
+		
+		return result;
+	},
+	
+	processSourceWithQueryInMatcher: function (sourceValueInformation, queryValueInformation, matcher, termMode, characterMatchingMode)
+	{
+		var result = false;
+		
+		var sourceValue = '';
+		var sourceCharacterLength = 0;
+		
+		var queryValue = '';
+		var queryCharacterLength = 0;
+		
+		switch (termMode)
+		{
+			case 'full':
+				
+				switch (characterMatchingMode)
+				{
+					case 'raw':
+						sourceValue = sourceValueInformation.rawValue;
+						sourceCharacterLength = sourceValueInformation.rawCharacterLength;
+						
+						queryValue = queryValueInformation.rawValue;
+						queryCharacterLength = queryValueInformation.rawCharacterLength;
+						break;
+					case 'simplified':
+						sourceValue = sourceValueInformation.simplifiedValue;
+						sourceCharacterLength = sourceValueInformation.simplifiedCharacterLength;
+						
+						queryValue = queryValueInformation.simplifiedValue;
+						queryCharacterLength = queryValueInformation.simplifiedCharacterLength;
+						break;
+				}
+				
+				var matchInformation = this.getMatchInformation(sourceValue, queryValue, sourceCharacterLength, queryCharacterLength);
+			
+				if (matchInformation !== false)
+				{				
+					matcher = this.applyCharacterHitsToMatcher(matcher, sourceValueInformation, characterMatchingMode, matchInformation.matchType, matchInformation.matchOffset, matchInformation.matchCharacterLength);
+					
+					if (this.isBetterMatchType(matcher.bestMatchType, matchInformation.matchType))
+					{
+						matcher.bestMatchType = matchInformation.matchType;
+					}
+					
+					switch (matchInformation.matchType)
+					{
+						case 'identical':
+							matcher.identicalCharacterHitTotal = matchInformation.matchCharacterLength;
+							break;
+						case 'similar':
+							matcher.similarCharacterHitTotal = matchInformation.matchCharacterLength;
+							matcher.levenshteinDistanceTotal = matchInformation.matchLevenshteinDistance;
+							break;
+					}
+					
+					matcher.termHitTotal = 1;
+				
+					if (matchInformation.matchOffset < matcher.lowestMatchOffset)
+					{
+						matcher.lowestMatchOffset = matchInformation.matchOffset;
+					}
+					
+					result = matcher;
+				}
+				
+				break;
+			case 'split':
+				
+				var hasMatch = false;
+				
+				var previousPartsOffset = 0;
+				
+				for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(sourceValueInformation); i < iEnd; ++i)
+				{
+					var sourceValueInformationPart = sourceValueInformation[i];
+					
+					var matcherPart = matcher.parts[i];
+					
+					switch (characterMatchingMode)
+					{
+						case 'raw':
+							sourceValue = sourceValueInformationPart.rawValue;
+							sourceCharacterLength = sourceValueInformationPart.rawCharacterLength;
+							break;
+						case 'simplified':
+							sourceValue = sourceValueInformationPart.simplifiedValue;
+							sourceCharacterLength = sourceValueInformationPart.simplifiedCharacterLength;
+							break;
+					}
+					
+					switch (sourceValueInformationPart.partType)
+					{
+						case 'separator':
+							// TODO count offset etc.
+							break;
+						case 'term':							
+							for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(queryValueInformation); j < jEnd; ++j)
+							{
+								var queryValueInformationPart = queryValueInformation[j];
+								
+								if (queryValueInformationPart.partType == 'term')
+								{
+									switch (characterMatchingMode)
+									{
+										case 'raw':
+											queryValue = queryValueInformationPart.rawValue;
+											queryCharacterLength = queryValueInformationPart.rawCharacterLength;
+											break;
+										case 'simplified':
+											queryValue = queryValueInformationPart.simplifiedValue;
+											queryCharacterLength = queryValueInformationPart.simplifiedCharacterLength;
+											break;
+									}
+									
+									var matchInformation = this.getMatchInformation(sourceValue, queryValue, sourceCharacterLength, queryCharacterLength);
+								
+									if (matchInformation !== false)
+									{
+										hasMatch = true;
+										
+										matcherPart = this.applyCharacterHitsToMatcher(matcherPart, sourceValueInformationPart, characterMatchingMode, matchInformation.matchType, matchInformation.matchOffset, matchInformation.matchCharacterLength);
+										
+										if (this.isBetterMatchType(matcher.bestMatchType, matchInformation.matchType))
+										{
+											matcher.bestMatchType = matchInformation.matchType;
+										}
+										
+										switch (matchInformation.matchType)
+										{
+											case 'identical':
+												matcher.identicalCharacterHitTotal += matchInformation.matchCharacterLength;
+												break;
+											case 'similar':
+												matcher.similarCharacterHitTotal += matchInformation.matchCharacterLength;
+												matcher.levenshteinDistanceTotal += matchInformation.matchLevenshteinDistance;
+												break;
+										}
+										
+										matcher.termHitTotal += 1;
+										
+										var correctedMatchOffset = previousPartsOffset + matchInformation.matchOffset;
+										
+										if (correctedMatchOffset < matcher.lowestMatchOffset)
+										{
+											matcher.lowestMatchOffset = correctedMatchOffset;
+										}
+									}
+								}
+							}
+							break;
+					}
+					
+					matcher.parts[i] = matcherPart;
+					
+					previousPartsOffset += sourceValueInformationPart.rawCharacterLength;
+				}
+				
+				if (hasMatch)
+				{
+					result = matcher;
+				}
+				break;
+		}
+		
+		return result;
+	},
+	
+	composeLabelFromSourceValueInformationAndSourceMatcher: function (sourceValueInformation, sourceMatcher, termMode, characterMatchingMode)
 	{
 		var result = '';
 		
-		for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(sourceTermInformation); i < iEnd; ++i)
+		/*
+		result += sourceMatcher.bestMatchType + '|';
+		result += sourceMatcher.identicalCharacterHitTotal + '|';
+		result += sourceMatcher.similarCharacterHitTotal + '|';
+		result += sourceMatcher.levenshteinDistanceTotal + '|';
+		result += sourceMatcher.termHitTotal + '|';
+		result += sourceMatcher.lowestMatchOffset + '|';
+		result += sourceMatcher.characterLength + '|';
+		*/
+		
+		var previousCharacterHit = false;
+		var characterHit = false;
+		var character = '';
+		
+		var value = '';
+		var characterHits = [];
+		
+		switch (termMode)
 		{
-			var sourceTerm = sourceTermInformation[i];
-			
-			switch (sourceTerm.type)
-			{
-				case 'separator':
-					result += sourceTerm.value;
-					break;
-				case 'term':
-					for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(sourceTerm.rawCharacterSwitches); j < jEnd; ++j)
+			case 'full':
+				switch (characterMatchingMode)
+				{
+					case 'raw':
+						value = sourceValueInformation.rawValue;
+						characterHits = sourceMatcher.rawCharacterHits;
+						break;
+					case 'simplified':
+						value = sourceValueInformation.rawValue;
+						characterHits = sourceMatcher.rawCharacterHits;
+						break;
+				}
+				
+				for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(characterHits); i < iEnd; ++i)
+				{
+					characterHit = characterHits[i];
+					
+					if (characterHit != previousCharacterHit)
 					{
-						var characterSwitch = sourceTerm.rawCharacterSwitches[j];
-						
-						// Simplified to raw mapping
-						
-						switch (characterSwitch)
+						switch (previousCharacterHit)
 						{
-							case 'literalFromBeginning':
-								result += '<b>' + XXX_String.getPart(sourceTerm.rawTerm, j, 1) + '</b>';
+							case 'identical':
+								result += '</b>';
 								break;
-							case 'literalAnywhereWithin':
-								result += '<u>' + XXX_String.getPart(sourceTerm.rawTerm, j, 1) + '</u>';
+							case 'similar':
+								result += '</u>';
 								break;
-							case 'levenshteinFromBeginning':
-								result += '<i><b>' + XXX_String.getPart(sourceTerm.rawTerm, j, 1) + '</b></i>';
+						}
+						
+						switch (characterHit)
+						{
+							case 'identical':
+								result += '<b>';
 								break;
-							case 'levenshteinAnywhereWithin':
-								result += '<i><b>' + XXX_String.getPart(sourceTerm.rawTerm, j, 1) + '</b></i>';
-								break;
-							case false:
-								result += XXX_String.getPart(sourceTerm.rawTerm, j, 1);
+							case 'similar':
+								result += '<u>';
 								break;
 						}
 					}
-					break;
-			}
+					
+					result += XXX_String.getPart(value, i, 1);
+					
+					previousCharacterHit = characterHit;
+				}
+				break;
+			case 'split':
+				for (var i = 0, iEnd = XXX_Array.getFirstLevelItemTotal(sourceValueInformation); i < iEnd; ++i)
+				{
+					var sourceValueInformationPart = sourceValueInformation[i];
+					
+					var sourceMatcherPart = sourceMatcher.parts[i];
+					
+					switch (sourceValueInformationPart.partType)
+					{
+						case 'separator':						
+							switch (previousCharacterHit)
+							{
+								case 'identical':
+									result += '</b>';
+									break;
+								case 'similar':
+									result += '</u>';
+									break;
+							}
+							
+							result += sourceValueInformationPart.rawValue;
+							
+							previousCharacterHit = false;
+							break;
+						case 'term':
+							
+							switch (characterMatchingMode)
+							{
+								case 'raw':
+									value = sourceValueInformationPart.rawValue;
+									characterHits = sourceMatcherPart.rawCharacterHits;
+									break;
+								case 'simplified':
+									value = sourceValueInformationPart.rawValue;
+									characterHits = sourceMatcherPart.rawCharacterHits;
+									break;
+							}
+							
+							for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(characterHits); j < jEnd; ++j)
+							{
+								characterHit = characterHits[j];
+								
+								if (characterHit != previousCharacterHit)
+								{
+									switch (previousCharacterHit)
+									{
+										case 'identical':
+											result += '</b>';
+											break;
+										case 'similar':
+											result += '</u>';
+											break;
+									}
+									
+									switch (characterHit)
+									{
+										case 'identical':
+											result += '<b>';
+											break;
+										case 'similar':
+											result += '<u>';
+											break;
+									}
+								}
+								
+								result += XXX_String.getPart(value, j, 1);
+								
+								previousCharacterHit = characterHit;
+							}
+							break;
+					}
+				}
+				break;
+		}
+		
+		switch (previousCharacterHit)
+		{
+			case 'identical':
+				result += '</b>';
+				break;
+			case 'similar':
+				result += '</u>';
+				break;
 		}
 		
 		return result;
-	},
-	
-	
-	
-	
-	/*
-	
-	
-	result presentation:
-		source (Default)
-		query
-	
-	comparison:
-		- literal
-		- simplified characters (without accents lower case etc.) (Default)
-		
-	term modes:
-		- full
-		- split
-	
-	highlighting:
-		- <b> Literal from beginning
-		- <u> Literal anywhere within
-		- <i> Levenshtein from beginning
-		- <i> Levenshtein anwywhere within
-	
-	precedence:
-		- full
-			- Literal from beginning
-			- Literal anywhere within
-			- Levenshtein from beginning
-			- Levenshtein anywhere within
-		- split
-			- Literal from beginning
-			- Literal anywhere within
-			- Levenshtein from beginning
-			- Levenshtein anywhere within
-	
-	Problems:
-		- matching (character switches) and result presentation difference
-		- if special character is formed back to multiple base characters
-			Dußeldorf -> Dusseldorf 
-			
-			Duß has to highlight Duss as <b></b> and reversed
-		
-			Have a switchboard for from>to
-				If ss -> ß, there should be a mapping for both s'es back to the single character
-				
-				source (Dußeldorf)
-				comparisonSource (dusseldorf)
-				
-			Loop torugh each character
-				- have an original switchboard
-				- have a normalized switchboard
-					- original character index
-					- normalized characters
-				
-				get position of match
-					
-					loop from there for the original start, to original end
-	
-
-	*/
-	
-	getSourceSwitchBoard: function (source)
-	{
-		
-		var characterLength = XXX_String.getCharacterLength(source);
-		
-		var result =
-		{
-			source: source,
-			sourceLowerCase: XXX_String.convertToLowerCase(source),
-			characterLength: characterLength,
-			characterSwitches: [],
-			characterHitPercentage: 0,
-			characterHitPercentageStep: 100 / characterLength,
-			termHits: 0
-		};
-		
-		if (characterLength > 0)
-		{
-			for (var i = 0, iEnd = characterLength; i < iEnd; ++i)
-			{
-				result.characterSwitches.push({character: XXX_String.getPart(source, i, 1), characterSwitch: false});
-			}
-		}
-		
-		return result;
-	},
-	
-	
-	
-	/*
-	
-	Inverted index:
-		
-		
-		- Read in all options, give them an index
-			- Parse all the words from it
-			- Make an index of the words with an array to all options
-    		
-    		termFrequencyInDocument:
-    			Differentiate documents by determining how many times the term is within it.
-    			To limit the impact of e.g. a message like 'java java java java java java', do termFrequncyInDocument = lowest(termFrequncyInDocument, 3) - A higher entropy is more important for these messages.
-    		termFrequencyInAllDocuments:
-    			Gives terms an importance ranking. E.g. determine in how many documents the term shows up. The more the lower the importance, the less the higher.
-    		
-			// This function is adapted from David Mertz's public domain Gnosis Utils for Python
-			// with some extra gymnastics since jsfiles uses the more compact js array instead of object/dicts
-			function localfind (wordlist)
-			{
-				var entries = {};
-				var hits = {}
-				
-				for (var idx = 0; idx < jsfiles.length; idx++)
-				{
-					// copy of the fileids index
-					hits[idx] = jsfiles[idx]; 
-				}
-				
-				for (var idx in wordlist)
-				{
-					var word = wordlist[idx];
-					word = word.toUpperCase();
-					
-					if (!jswords[word])
-					{
-						// Nothing for this one word (fail)
-						return {};
-					}
-					
-					var entry = {};
-					
-					// For each word, get index
-					for (var idx=0; idx < jswords[word].length; idx++) 
-					{
-						// of matching files
-						entry[jswords[word][idx]] = "hit"; 
-					}
-					
-					// Eliminate hits for every non-match
-					for (var fileid in hits) 
-					{
-						if (!entry[fileid])
-						{
-							delete hits[fileid];
-						}
-					}
-				}
-				
-				return hits;
-			}
-	
-	*/
-	
-	composeInvertedIndex: function ()
-	{
-		this.sources = [];
-		this.terms = [];
 	}
-};
-
-/*
-
-Source:
-	- terms
-		- term
-		- frequency
-		- limitedFrequency (e.g. to avoid having a tweet with 20 times the same term ranking higher)
-	- term entropy (how many different terms)
-	
-Terms:
-	- frequency: The total)
-	- sourceFrequency (How many of the sources have it at least once, the less the more distinctive the term is)
-	
-*/
-
-XXX_Search_InvertedIndex = function ()
-{
-	
-};
-
-XXX_Search_InvertedIndex.prototype.addSource = function (source)
-{
-	var index = XXX_Array.getFirstLevelItemTotal(this.sources);
-	
-	this.sources.push(source);
-	
-	var terms = this.splitToTerms();
-};
-
-XXX_Search_InvertedIndex.prototype.find = function ()
-{
-
 };
