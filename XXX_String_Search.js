@@ -433,7 +433,7 @@ var XXX_String_Search =
 		return result;
 	},
 	
-	getMatchInformation: function (source, query, sourceCharacterLength, queryCharacterLength)
+	getMatchInformation: function (source, query, sourceCharacterLength, queryCharacterLength, similarWithinWord)
 	{
 		if (!sourceCharacterLength)
 		{
@@ -472,9 +472,16 @@ var XXX_String_Search =
 					{
 						var characterLengthDifference = sourceCharacterLength - queryCharacterLength;
 						
+						var maximumOffset = characterLengthDifference;
+						
+						if (!similarWithinWord)
+						{
+							maximumOffset = 1;
+						}
+						
 						var temporarySimilarMatches = [];
 							
-						for (var i = 0, iEnd = characterLengthDifference; i < iEnd; ++i)
+						for (var i = 0, iEnd = maximumOffset; i < iEnd; ++i)
 						{
 							var sourcePart = XXX_String.getPart(source, i, queryCharacterLength);
 							
@@ -559,7 +566,6 @@ var XXX_String_Search =
 							}
 						}
 					}
-				
 				}
 			}
 		}
