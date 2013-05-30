@@ -1328,7 +1328,7 @@ var XXX_TimestampHelpers =
 	{
 		XXX_JS.errorNotification(1, 'Parsing date value ' + dateValue);
 		
-		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'yearMonthDate');
+		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'dateMonthYear');
 		
 		var todaysDate = new XXX_Timestamp();
 		var todaysDateParts = todaysDate.parse();
@@ -1347,7 +1347,7 @@ var XXX_TimestampHelpers =
 			
 			var parts = XXX_String_Pattern.splitToArray(dateValue, '[/\\-., :\'"]+', '');
 			
-				//XXX_JS.errorNotification(1, 'Parsed date parts ' + XXX_String_JSON.encode(parts) + '');
+				//XXX_JS.errorNotification(1, 'Parsed date parts ' + XXX_String_JSON.encode(parts));
 				
 			var filteredParts = [];
 			
