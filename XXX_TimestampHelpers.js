@@ -1326,6 +1326,8 @@ var XXX_TimestampHelpers =
 	
 	parseDateValue: function (dateValue, dateFormat)
 	{
+		var original = dateValue;
+		
 		XXX_JS.errorNotification(1, 'Parsing date value ' + dateValue);
 		
 		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'dateMonthYear');
@@ -1546,6 +1548,7 @@ var XXX_TimestampHelpers =
 				
 		var result =
 		{
+			original: original,
 			date: newDate,
 			month: newMonth,
 			year: newYear

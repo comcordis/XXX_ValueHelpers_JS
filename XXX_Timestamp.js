@@ -94,27 +94,27 @@ XXX_Timestamp.prototype.parse = function (extended)
 	var parts =
 	{
 		timestamp: this.timestamp,
-		year: year,
-		yearShort: yearShort,
-		month: monthOfTheYear,
-		monthOfTheYear: monthOfTheYear,
-		date: dayOfTheMonth,
-		dayOfTheMonth: dayOfTheMonth,
-		dayOfTheWeek: dayOfTheWeek,
-		hour: hour,
-		hourShort: hourShort,
-		minute: minute,
-		second: second,
+		year: XXX_Type.makeInteger(year),
+		yearShort: XXX_Type.makeInteger(yearShort),
+		month: XXX_Type.makeInteger(monthOfTheYear),
+		monthOfTheYear: XXX_Type.makeInteger(monthOfTheYear),
+		date: XXX_Type.makeInteger(dayOfTheMonth),
+		dayOfTheMonth: XXX_Type.makeInteger(dayOfTheMonth),
+		dayOfTheWeek: XXX_Type.makeInteger(dayOfTheWeek),
+		hour: XXX_Type.makeInteger(hour),
+		hourShort: XXX_Type.makeInteger(hourShort),
+		minute: XXX_Type.makeInteger(minute),
+		second: XXX_Type.makeInteger(second),
 		meridiem: meridiem
 	};
 	
 	if (extended)
 	{
-		parts.dayTotalInMonth = XXX_TimestampHelpers.getDayTotalInMonth(year, monthOfTheYear);
-		parts.dayTotalInYear = XXX_TimestampHelpers.getDayTotalInYear(year);
-		parts.dayOfTheYear = XXX_TimestampHelpers.getDayOfTheYear(year, monthOfTheYear, dayOfTheMonth);
+		parts.dayTotalInMonth = XXX_Type.makeInteger(XXX_TimestampHelpers.getDayTotalInMonth(year, monthOfTheYear));
+		parts.dayTotalInYear = XXX_Type.makeInteger(XXX_TimestampHelpers.getDayTotalInYear(year));
+		parts.dayOfTheYear = XXX_Type.makeInteger(XXX_TimestampHelpers.getDayOfTheYear(year, monthOfTheYear, dayOfTheMonth));
 		parts.leapYear = XXX_TimestampHelpers.isLeapYear(year);
-		parts.weekOfTheYear = XXX_TimestampHelpers.iso8601_getWeekOfTheYear(year, monthOfTheYear, dayOfTheMonth);
+		parts.weekOfTheYear = XXX_Type.makeInteger(XXX_TimestampHelpers.iso8601_getWeekOfTheYear(year, monthOfTheYear, dayOfTheMonth));
 	}	
 	
 	return parts;
