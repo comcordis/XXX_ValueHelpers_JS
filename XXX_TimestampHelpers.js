@@ -1176,6 +1176,8 @@ var XXX_TimestampHelpers =
 	{
 		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'dateMonthYear');
 		
+		var separator = ' ';
+		
 		var dateValue = '';
 		
 		var timestampParts = timestamp.parse();
@@ -1196,13 +1198,13 @@ var XXX_TimestampHelpers =
 		switch (dateFormat)
 		{
 			case 'dateMonthYear':
-				dateValue = composedDayOfTheWeekName + ' ' + composedDate + ' / ' + composedMonthName + ' / ' + composedYear;
+				dateValue = composedDayOfTheWeekName + ' ' + composedDate + separator + composedMonthName + separator + composedYear;
 				break;
 			case 'monthDateYear':
-				dateValue = composedMonthName + ' / ' + composedDayOfTheWeekName + ' ' + composedDate + ' / ' + composedYear;
+				dateValue = composedMonthName + separator + composedDayOfTheWeekName + ' ' + composedDate + separator + composedYear;
 				break;
 			case 'yearMonthDate':
-				dateValue = composedYear + ' / ' + composedMonthName + ' / ' + composedDayOfTheWeekName + ' ' + composedDate;
+				dateValue = composedYear + separator + composedMonthName + separator + composedDayOfTheWeekName + ' ' + composedDate;
 				break;
 		}
 		
