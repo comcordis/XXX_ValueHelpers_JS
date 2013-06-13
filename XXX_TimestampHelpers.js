@@ -1222,9 +1222,12 @@ var XXX_TimestampHelpers =
 		
 		clockType = XXX_Default.toOption(clockType, ['12', '24'], '24');
 		
-		var hour = 12;
-		var minute = 0;
-		var meridiem = 'pm';
+		var todaysTime = new XXX_Timestamp();
+		var todaysTimeParts = todaysTime.parse();
+		
+		var hour = todaysTimeParts.hour;
+		var minute = todaysTimeParts.minute;
+		var meridiem = todaysTimeParts.meridiem;
 		
 		var newHour = hour;
 		var newMinute = minute;
