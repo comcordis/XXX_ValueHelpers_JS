@@ -1188,11 +1188,36 @@ var XXX_TimestampHelpers =
 		
 		var composedMonthName = '';
 		
-		var monthNames = XXX_I18n_Translation.get('dateTime', 'months', 'abbreviations');
+		var monthNames =
+		[
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'january'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'february'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'march'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'april'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'may'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'june'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'july'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'august'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'september'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'october'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'november'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'december')
+		];
+		
 		composedMonthName = monthNames[timestampParts.month - 1];
 		
 		var composedDayOfTheWeekName = '';
-		var dayOfTheWeekNames = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'abbreviations');
+		var dayOfTheWeekNames =
+		[
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'monday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'tuesday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'wednesday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'thursday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'friday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'saturday'),
+			XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'sunday')
+		];
+		
 		composedDayOfTheWeekName = dayOfTheWeekNames[timestampParts.dayOfTheWeek - 1];
 		
 		switch (dateFormat)
@@ -1363,9 +1388,38 @@ var XXX_TimestampHelpers =
 				var filteredPart = XXX_String.trim(parts[i]);
 				
 				
-				var monthNames = XXX_I18n_Translation.get('dateTime', 'months', 'names');
-				var monthAbbreviations = XXX_I18n_Translation.get('dateTime', 'months', 'abbreviations');
-			
+				var monthNames =
+				[
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'january'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'february'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'march'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'april'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'may'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'june'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'july'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'august'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'september'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'october'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'november'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'names', 'december')
+				];
+				
+				var monthAbbreviations =
+				[
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'january'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'february'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'march'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'april'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'may'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'june'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'july'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'august'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'september'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'october'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'november'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'months', 'abbreviations', 'december')
+				];
+											
 				var isMonth = false;
 				
 				for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(monthNames); j < jEnd; ++j)
@@ -1398,8 +1452,28 @@ var XXX_TimestampHelpers =
 				
 				var isDayOfTheWeek = false;
 			
-				var dayOfTheWeekNames = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'names');
-				var dayOfTheWeekAbbreviations = XXX_I18n_Translation.get('dateTime', 'daysOfTheWeek', 'abbreviations');
+				var dayOfTheWeekNames =
+				[
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'monday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'tuesday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'wednesday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'thursday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'friday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'saturday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'names', 'sunday')
+				];
+				
+				
+				var dayOfTheWeekAbbreviations =
+				[
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'monday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'tuesday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'wednesday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'thursday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'friday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'saturday'),
+					XXX_I18n_Translation.get('custom', 'calendar', 'daysOfTheWeek', 'abbreviations', 'sunday')
+				];
 				
 				for (var j = 0, jEnd = XXX_Array.getFirstLevelItemTotal(dayOfTheWeekNames); j < jEnd; ++j)
 				{
