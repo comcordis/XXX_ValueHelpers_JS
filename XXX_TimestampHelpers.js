@@ -1112,6 +1112,11 @@ var XXX_TimestampHelpers =
 		
 		var timeValue = '';
 		
+		if (XXX_Type.isInteger(timestamp))
+		{
+			timestamp = new XXX_Timestamp(timestamp);
+		}
+		
 		var timestampParts = timestamp.parse();
 		
 		var hour = timestampParts.hour;
@@ -1179,6 +1184,11 @@ var XXX_TimestampHelpers =
 		var separator = ' ';
 		
 		var dateValue = '';
+		
+		if (XXX_Type.isInteger(timestamp))
+		{
+			timestamp = new XXX_Timestamp(timestamp);
+		}
 		
 		var timestampParts = timestamp.parse();
 		
