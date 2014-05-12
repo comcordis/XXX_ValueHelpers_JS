@@ -151,9 +151,15 @@ var XXX_String_Search =
 		
 		result.sourceIndex = sourceIndex;
 		result.bestMatchType = false;
-		result.identicalCharacterHitTotal = 0;
-		result.similarCharacterHitTotal = 0;
+		
+		result.fullyIdenticalCharacterHitTotal = 0;
+		result.partlyIdenticalCharacterHitTotal = 0;
+		result.partlySimilarCharacterHitTotal = 0;
+		
 		result.levenshteinDistanceTotal = 0;
+		
+		result.fullTermHitTotal = 0;
+		result.partialTermHitTotal = 0;
 		result.termHitTotal = 0;
 		
 		result.lowestMatchOffset = 10000;
@@ -278,21 +284,24 @@ var XXX_String_Search =
 			
 			switch (matchType)
 			{
-				case 'identical':
+				case 'fullyIdentical':
 					result = 1;
 					break;
-				case 'similar':
+				case 'partlyIdentical':
 					result = 2;
+					break;
+				case 'partlySimilar':
+					result = 3;
 					break;
 				case false:
 				default:
-					result = 3;
+					result = 4;
 					break;
 			}
 			
 			return result;
 		},
-			
+				
 	compareMatchers: function (a, b)
 	{
 		var result = 0;
@@ -302,38 +311,43 @@ var XXX_String_Search =
 		if (result == 0)
 		{
 			result = this.getMatchTypeSortNumber(a.bestMatchType) - this.getMatchTypeSortNumber(b.bestMatchType);
-			/*
+			
 			if (result == 0)
 			{
 				result = this.getTermModeSortNumber(a.termMode) - this.getTermModeSortNumber(b.termMode);
-			*/
+			
 				if (result == 0)
 				{
-					result = b.termHitTotal - a.termHitTotal;
+					result = b.fullTermHitTotal - a.fullTermHitTotal;
 					
 					if (result == 0)
 					{
-						result = (b.identicalCharacterHitTotal + b.similarCharacterHitTotal) - (a.identicalCharacterHitTotal + a.identicalCharacterHitTotal);
-												
+						result = b.partialTermHitTotal - a.partialTermHitTotal;
+					
 						if (result == 0)
-						{						
-							result = b.identicalCharacterHitTotal - a.identicalCharacterHitTotal;
+						{
+							result = b.fullyIdenticalCharacterHitTotal - a.fullyIdenticalCharacterHitTotal;
 													
 							if (result == 0)
 							{
-								result = b.similarCharacterHitTotal - a.similarCharacterHitTotal;
-								
+								result = b.partlyIdenticalCharacterHitTotal - a.partlyIdenticalCharacterHitTotal;
+													
 								if (result == 0)
 								{
-									result = a.levenshteinDistanceTotal - b.levenshteinDistanceTotal;
-									
+									result = b.partlySimilarCharacterHitTotal - a.partlySimilarCharacterHitTotal;
+													
 									if (result == 0)
-									{
-										result = a.characterLength - b.characterLength;
+									{						
+										result = a.levenshteinDistanceTotal - b.levenshteinDistanceTotal;
 										
 										if (result == 0)
 										{
-											result = a.lowestMatchOffset - b.lowestMatchOffset;
+											result = a.characterLength - b.characterLength;
+											
+											if (result == 0)
+											{
+												result = a.lowestMatchOffset - b.lowestMatchOffset;
+											}
 										}
 									}
 								}
@@ -341,7 +355,7 @@ var XXX_String_Search =
 						}
 					}
 				}
-			//}
+			}
 		}
 		
 		return result;
@@ -353,10 +367,14 @@ var XXX_String_Search =
 		
 		switch (oldMatchType)
 		{
-			case 'identical':											
+			case 'partlyIdentical':	
+				if (newMatchType == 'fullyIdentical')
+				{
+					result = true;
+				}										
 				break;
-			case 'similar':
-				if (newMatchType == 'identical')
+			case 'partlySimilar':
+				if (newMatchType == 'partlyIdentical' || newMatchType == 'fullyIdentical')
 				{
 					result = true;
 				}
@@ -452,115 +470,52 @@ var XXX_String_Search =
 		var matchCharacterLength = 0;
 		var matchLevenshteinDistance = 0;
 		
-		var matchAtCharacterPosition = XXX_String.findFirstPosition(source, query);
-				
-		if (matchAtCharacterPosition !== false)
+		// fullyIdentical
+		if (source == query)
 		{
-			matchType = 'identical';
-			matchOffset = matchAtCharacterPosition;
-			matchCharacterLength = queryCharacterLength;
+			matchType = 'fullyIdentical';
+			matchCharacterLength = sourceCharacterLength;
 		}
 		else
-		{
-			if (queryCharacterLength > 2)
+		{		
+			var matchAtCharacterPosition = XXX_String.findFirstPosition(source, query);
+			
+			// partlyIdentical
+			if (matchAtCharacterPosition !== false)
 			{
-				var maximumLevenshteinDistance = this.getMaximumLevenshteinDistanceForCharacterLength(queryCharacterLength);
-				
-				if (maximumLevenshteinDistance > 0)
+				matchType = 'partlyIdentical';
+				matchOffset = matchAtCharacterPosition;
+				matchCharacterLength = queryCharacterLength;
+			}
+			// partlySimilar
+			else
+			{
+				// Should be at least 3 characters
+				if (queryCharacterLength > 2 && sourceCharacterLength > 2)
 				{
-					if (queryCharacterLength < sourceCharacterLength)
+					// See the maximum potential for mistakes
+					var maximumLevenshteinDistance = this.getMaximumLevenshteinDistanceForCharacterLength(queryCharacterLength);
+					
+					if (maximumLevenshteinDistance > 0)
 					{
-						var characterLengthDifference = sourceCharacterLength - queryCharacterLength;
-						
-						var maximumOffset = characterLengthDifference;
-						
-						if (!similarWithinWord)
-						{
-							maximumOffset = 1;
-						}
-						
-						var temporarySimilarMatches = [];
-							
-						for (var i = 0, iEnd = maximumOffset; i < iEnd; ++i)
-						{
-							var sourcePart = XXX_String.getPart(source, i, queryCharacterLength);
-							
-							var levenshteinDistance = XXX_String_Levenshtein.getDistance(query, sourcePart);
-							
-							if (levenshteinDistance <= maximumLevenshteinDistance)
-							{
-								var expandingOffset = i;
-								var expandingLevenshteinDistance = levenshteinDistance;
-								var expandingCharacterLength = queryCharacterLength;
-								
-								var extraExpandingCharacterLength = characterLengthDifference - i;
-								
-								if (extraExpandingCharacterLength > 0)
-								{
-									for (var j = queryCharacterLength + 1, jEnd = queryCharacterLength + extraExpandingCharacterLength; j <= jEnd; ++j)
-									{
-										var sourcePartSub = XXX_String.getPart(source, i, j);
-										
-										var levenshteinDistanceSub = XXX_String_Levenshtein.getDistance(query, sourcePartSub);
-										
-										if (levenshteinDistanceSub <= expandingLevenshteinDistance)
-										{
-											expandingLevenshteinDistance = levenshteinDistanceSub;
-											expandingCharacterLength = j;
-										}
-										else
-										{
-											break;
-										}
-									}
-									
-									temporarySimilarMatches.push([expandingOffset, expandingLevenshteinDistance, expandingCharacterLength]);
-								}
-								else
-								{
-									temporarySimilarMatches.push([i, levenshteinDistance, queryCharacterLength]);
-								}
-							}
-						}
-						
-						if (XXX_Array.getFirstLevelItemTotal(temporarySimilarMatches))
-						{
-							temporarySimilarMatches.sort(function (a, b)
-							{
-								return XXX_String_Search.compareTemporarySimilarMatches(a, b);
-							});
-							
-							var tempOffset = temporarySimilarMatches[0][0];
-							var tempDistance = temporarySimilarMatches[0][1];
-							var tempCharacterLength = temporarySimilarMatches[0][2];
-							
-							matchType = 'similar';
-							matchOffset = tempOffset;
-							matchCharacterLength = tempCharacterLength;
-							matchLevenshteinDistance = tempDistance;
-						}
-					}
-					else
-					{
-						var sourceIsLongEnough = true;
+						var characterLengthDifference = 0;
 						
 						if (queryCharacterLength > sourceCharacterLength)
 						{
-							var minimumCharacterLength = XXX_Number.highest(queryCharacterLength - maximumLevenshteinDistance, 0);
-							
-							if (sourceCharacterLength < minimumCharacterLength)
-							{
-								sourceIsLongEnough = false;
-							}
+							characterLengthDifference = queryCharacterLength - sourceCharacterLength;
+						}
+						else if (queryCharacterLength < sourceCharacterLength)
+						{
+							characterLengthDifference = sourceCharacterLength - queryCharacterLength;
 						}
 						
-						if (sourceIsLongEnough)
+						if (characterLengthDifference <= maximumLevenshteinDistance)
 						{
 							var levenshteinDistance = XXX_String_Levenshtein.getDistance(source, query);
 							
 							if (levenshteinDistance <= maximumLevenshteinDistance)
 							{
-								matchType = 'similar';
+								matchType = 'partlySimilar';
 								matchCharacterLength = queryCharacterLength;						
 								matchLevenshteinDistance = levenshteinDistance;
 							}
@@ -629,12 +584,21 @@ var XXX_String_Search =
 					
 					switch (matchInformation.matchType)
 					{
+						case 'fullyIdentical':
+							matcher.fullyIdenticalCharacterHitTotal = matchInformation.matchCharacterLength;
+							
+							matcher.fullTermHitTotal = 1;
+							break;
 						case 'identical':
-							matcher.identicalCharacterHitTotal = matchInformation.matchCharacterLength;
+							matcher.partlyIdenticalCharacterHitTotal = matchInformation.matchCharacterLength;
+							
+							matcher.partialTermHitTotal = 1;
 							break;
 						case 'similar':
-							matcher.similarCharacterHitTotal = matchInformation.matchCharacterLength;
+							matcher.partlySimilarCharacterHitTotal = matchInformation.matchCharacterLength;
 							matcher.levenshteinDistanceTotal = matchInformation.matchLevenshteinDistance;
+							
+							matcher.partialTermHitTotal = 1;
 							break;
 					}
 					
@@ -712,12 +676,21 @@ var XXX_String_Search =
 										
 										switch (matchInformation.matchType)
 										{
-											case 'identical':
-												matcher.identicalCharacterHitTotal += matchInformation.matchCharacterLength;
+											case 'fullyIdentical':
+												matcher.fullyIdenticalCharacterHitTotal += matchInformation.matchCharacterLength;
+												
+												matcher.fullTermHitTotal += 1;
 												break;
-											case 'similar':
-												matcher.similarCharacterHitTotal += matchInformation.matchCharacterLength;
+											case 'partlyIdentical':
+												matcher.partlyIdenticalCharacterHitTotal += matchInformation.matchCharacterLength;
+												
+												matcher.partialTermHitTotal += 1;
+												break;
+											case 'partlySimilar':
+												matcher.partlySimilarCharacterHitTotal += matchInformation.matchCharacterLength;
 												matcher.levenshteinDistanceTotal += matchInformation.matchLevenshteinDistance;
+												
+												matcher.partialTermHitTotal += 1;
 												break;
 										}
 										
@@ -794,20 +767,22 @@ var XXX_String_Search =
 					{
 						switch (previousCharacterHit)
 						{
-							case 'identical':
+							case 'fullyIdentical':
+							case 'partlyIdentical':
 								result += '</b>';
 								break;
-							case 'similar':
+							case 'partlySimilar':
 								result += '</u>';
 								break;
 						}
 						
 						switch (characterHit)
 						{
-							case 'identical':
+							case 'fullyIdentical':
+							case 'partlyIdentical':
 								result += '<b>';
 								break;
-							case 'similar':
+							case 'partlySimilar':
 								result += '<u>';
 								break;
 						}
@@ -830,10 +805,11 @@ var XXX_String_Search =
 						case 'separator':						
 							switch (previousCharacterHit)
 							{
-								case 'identical':
+								case 'fullyIdentical':
+								case 'partlyIdentical':
 									result += '</b>';
 									break;
-								case 'similar':
+								case 'partlySimilar':
 									result += '</u>';
 									break;
 							}
@@ -864,20 +840,22 @@ var XXX_String_Search =
 								{
 									switch (previousCharacterHit)
 									{
-										case 'identical':
+										case 'fullyIdentical':
+										case 'partlyIdentical':
 											result += '</b>';
 											break;
-										case 'similar':
+										case 'partlySimilar':
 											result += '</u>';
 											break;
 									}
 									
 									switch (characterHit)
 									{
-										case 'identical':
+										case 'fullyIdentical':
+										case 'partlyIdentical':
 											result += '<b>';
 											break;
-										case 'similar':
+										case 'partlySimilar':
 											result += '<u>';
 											break;
 									}
@@ -895,10 +873,11 @@ var XXX_String_Search =
 		
 		switch (previousCharacterHit)
 		{
-			case 'identical':
+			case 'fullyIdentical':
+			case 'partlyIdentical':
 				result += '</b>';
 				break;
-			case 'similar':
+			case 'partlySimilar':
 				result += '</u>';
 				break;
 		}

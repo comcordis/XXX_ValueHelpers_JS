@@ -186,6 +186,19 @@ XXX_Search_SimpleIndex.prototype.getSuggestions = function ()
 			suggestion.data.dataType = this.dataType;
 		}
 		
+		suggestion.data.sourceMatcher =
+		{
+			bestMatchType: sourceMatcher.bestMatchType,
+			fullyIdenticalCharacterHitTotal: sourceMatcher.fullyIdenticalCharacterHitTotal,
+			partlyIdenticalCharacterHitTotal: sourceMatcher.partlyIdenticalCharacterHitTotal,
+			partlySimilarCharacterHitTotal: sourceMatcher.partlySimilarCharacterHitTotal,
+			levenshteinDistanceTotal: sourceMatcher.levenshteinDistanceTotal,
+			fullTermHitTotal: sourceMatcher.fullTermHitTotal,
+			partialTermHitTotal: sourceMatcher.partialTermHitTotal,
+			termHitTotal: sourceMatcher.termHitTotal,
+			lowestMatchOffset: sourceMatcher.lowestMatchOffset
+		};
+		
 		suggestions.push(suggestion);
 	}
 	
