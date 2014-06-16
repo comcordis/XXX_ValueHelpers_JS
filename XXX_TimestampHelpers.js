@@ -1368,7 +1368,7 @@ var XXX_TimestampHelpers =
 	{
 		var original = dateValue;
 		
-		XXX_JS.errorNotification(1, 'Parsing date value ' + dateValue);
+		XXX_JS.errorNotification(0, 'Parsing date value ' + dateValue);
 		
 		dateFormat = XXX_Default.toOption(dateFormat, ['dateMonthYear', 'monthDateYear', 'yearMonthDate'], 'dateMonthYear');
 		
@@ -1389,7 +1389,12 @@ var XXX_TimestampHelpers =
 			
 			var parts = XXX_String_Pattern.splitToArray(dateValue, '[/\\-., :\'"]+', '');
 			
-				//XXX_JS.errorNotification(1, 'Parsed date parts ' + XXX_String_JSON.encode(parts));
+			if (XXX_Array.getFirstLevelItemTotal(parts) == 4)
+			{
+				parts.shift();
+			}
+			
+			XXX_JS.errorNotification(0, 'Parsed date parts ' + XXX_String_JSON.encode(parts));
 				
 			var filteredParts = [];
 			
@@ -1625,14 +1630,14 @@ var XXX_TimestampHelpers =
 			
 			if (!XXX_TimestampHelpers.isExistingDate(newYear, newMonth, newDate))
 			{
-				//XXX_JS.errorNotification(1, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
+				XXX_JS.errorNotification(0, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
 				
 				newDate = date;
 				newMonth = month;
 				newYear = year;
 			}
 			
-			//XXX_JS.errorNotification(1, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
+			XXX_JS.errorNotification(0, 'Defaulting back ' + newYear + '-' + newMonth + '-' + newDate + ' to now');
 		}
 				
 		var result =
