@@ -1,0 +1,6 @@
+project:XXX_ValueHelpers_JS
+deployEnvironment:development
+checkout:master
+commitHash:0392e60a454d0943d4503576bad520fb3290dd61
+timestamp:2015-04-13T09:46:22Z
+deployer:operations
