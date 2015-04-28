@@ -162,7 +162,18 @@ var XXX_Type =
 	
 	isNumeric: function (value)
 	{
-		return this.makeInteger(value, 10) == value || this.makeFloat(value) == value;
+		var result = false;
+
+		result = this.isInteger(value) || this.isFloat(value);
+
+		if (!result)
+		{
+			value = this.makeString(value);
+
+			result = this.makeString(this.makeInteger(value)) == value || this.makeString(this.makeFloat(value)) == value;
+		}
+
+		return result;
 	},
 	
 	isPositiveNumeric: function (value)
