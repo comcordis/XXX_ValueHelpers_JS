@@ -486,7 +486,7 @@ var XXX_TimestampHelpers =
 			{
 				var timeZoneInformation = this.getTimeZoneInformation();
 				
-				localSecondOffset += timeZoneInformation.secondOffset.current;
+				localSecondOffset += timeZoneInformation.secondOffset.lowest;
 				
 				if (timeZoneInformation.regionWithDaylightSavingTime)
 				{
